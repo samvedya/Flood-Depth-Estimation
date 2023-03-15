@@ -6,7 +6,10 @@
 % INPUTS:              C-Band data (Sentine-1A)
 %                      L-Band data (ALOS-2 PALSAR-2)
 %                      Digital Elevation Model (SRTM, 1arc Sec)
-%      Derived data:   L-Band derived NDFI flood boundary (Binary raster)
+%      Derived data:   L&C derived flood boundary
+% 
+% OUTPUTS:             Water Surface Levels
+%                      Flood Depth
                     
 %#############################################################################################
 clc
@@ -14,11 +17,11 @@ clear all
 % Data sets
 % Reading Sentinel-1A and ALOS-2 data 
 sent=imread('Sentinel.tif'); % Read C-band data
-%sent=sent(1:674,1:1037); (Clip to same dimensions)
 alos=imread('ALOS2.tif'); % Read L-band data
 alos=10*log10(alos.^2)-83; % L-band Calibration
+%sent=sent(1:size(alos,1),1:size(alos,2)); (Clip to same dimensions)
 dem=imread('DEM.tif'); % Read DEM
-dem10=dem(:,:,2);
+%dem10=dem(:,:,2);
 
 % Flood boundary extraction
 % Wavelet image fusion and segmentation
@@ -37,39 +40,39 @@ depth2=(seg_I==2); depth2=double(depth2);
 depth3=(seg_I==3); depth3=double(depth3);
 depth4=(seg_I==4); depth4=double(depth4);
 depth5=(seg_I==5); depth5=double(depth5);
-% Finding all elevation (dem10) that corresponds to extent in each boundary
+% Finding all elevation values in (dem10) that corresponds to extent in each boundary
 dem10_lev1=dem10(find(depth1==1));
 dem10_lev2=dem10(find(depth2==1));
 dem10_lev3=dem10(find(depth3==1));
 dem10_lev4=dem10(find(depth4==1));
 dem10_lev5=dem10(find(depth5==1));
-dem10=dem10(:);
+dem10=dem10(:); % Convert to vector
 % clipping DEM10 in flood extent
 d_lev1=zeros(length(dem10),1);
 d_lev1(find(depth1==1))=dem10_lev1;
-d_lev1=reshape(d_lev1,[734,1037]);
+d_lev1=reshape(d_lev1,[size(alos,1),size(alos,2)]);
 d_lev1(d_lev1==0)=NaN;
 figure(1)
 imshow(d_lev1,[]);colormap jet; impixelinfo;
 
 d_lev2=zeros(length(dem10),1);
 d_lev2(find(depth2==1))=dem10_lev2;
-d_lev2=reshape(d_lev2,[734,1037]);
+d_lev2=reshape(d_lev2,[size(alos,1),size(alos,2)]);
 imshow(d_lev2,[]);colormap jet; impixelinfo;
 
 d_lev3=zeros(length(dem10),1);
 d_lev3(find(depth3==1))=dem10_lev3;
-d_lev3=reshape(d_lev3,[734,1037]);
+d_lev3=reshape(d_lev3,[size(alos,1),size(alos,2)]);
 imshow(d_lev3,[]);colormap jet; impixelinfo;
 
 d_lev4=zeros(length(dem10),1);
 d_lev4(find(depth4==1))=dem10_lev4;
-d_lev4=reshape(d_lev4,[734,1037]);
+d_lev4=reshape(d_lev4,[size(alos,1),size(alos,2));
 imshow(d_lev4,[]);colormap jet; impixelinfo;
 
 d_lev5=zeros(length(dem10),1);
 d_lev5(find(depth5==1))=dem10_lev5;
-d_lev5=reshape(d_lev5,[734,1037]);
+d_lev5=reshape(d_lev5,[size(alos,1),size(alos,2)]);
 imshow(d_lev5,[]);colormap jet; impixelinfo;
 %% 
 % Section -2
@@ -168,7 +171,8 @@ figure(3)
 imshow(Layer_lev1);colormap jet; impixelinfo;
 
 Lay_L1_write=-Layer_lev1';
-% Interpolation
+% Interpolation % Value calibration with FwDET 
+% Or use depth measurements derived from hydraulic modelling or field measurements
 
 depths1=Lay_L1_write(find(p1>50&p1<60));
 depths2=Lay_L2_write(find(p2>50&p2<54));
